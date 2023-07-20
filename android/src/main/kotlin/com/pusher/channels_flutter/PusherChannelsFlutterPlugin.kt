@@ -257,6 +257,9 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
             }
             )
         }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     override fun onSubscriptionSucceeded(channelName: String) {
