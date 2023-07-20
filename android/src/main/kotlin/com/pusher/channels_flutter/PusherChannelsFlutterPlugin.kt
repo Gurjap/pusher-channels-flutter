@@ -237,14 +237,13 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
             mutex.acquire()
             return result
         } catch (e: Exception) {
-            result.error(TAG, e.message, null)
+            return "";
         }
     }
 
     // Event handlers
     override fun onConnectionStateChange(change: ConnectionStateChange) {
         try {
-
             callback(
                 "onConnectionStateChange", mapOf(
                     "previousState" to change.previousState.toString(),
@@ -253,7 +252,7 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
             )
         }
         catch (e: Exception) {
-            result.error(TAG, e.message, null)
+
         }
     }
 
@@ -319,7 +318,7 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
                 )
             )
         } catch (e: Exception) {
-            result.error(TAG, e.message, null)
+
         }
     }
 
