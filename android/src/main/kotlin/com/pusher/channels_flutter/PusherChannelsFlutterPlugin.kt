@@ -250,11 +250,6 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
                     "previousState" to change.previousState.toString(),
                     "currentState" to change.currentState.toString()
                 )
-                return result
-                        catch (e: Exception
-            ) {
-                result.error(TAG, e.message, null)
-            }
             )
         }
         catch (e: Exception) {
