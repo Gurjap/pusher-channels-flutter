@@ -131,16 +131,27 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
     }
 
     private fun connect(result: Result) {
-        pusher!!.connect(this, ConnectionState.ALL)
-        result.success(null)
+        try {
+            pusher!!.connect(this, ConnectionState.ALL)
+            result.success(null)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     private fun disconnect(result: Result) {
+        try {
         pusher!!.disconnect()
         result.success(null)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     private fun subscribe(channelName: String, result: Result) {
+        try {
         val channel = when {
             channelName.startsWith("private-encrypted-") -> pusher!!.subscribePrivateEncrypted(
                 channelName, this
@@ -153,14 +164,24 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
         }
         channel.bindGlobal(this)
         result.success(null)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     private fun unsubscribe(channelName: String, result: Result) {
+        try {
         pusher!!.unsubscribe(channelName)
         result.success(null)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     private fun trigger(channelName: String, eventName: String, data: String, result: Result) {
+        try {
         when {
             channelName.startsWith("private-encrypted-") -> throw Exception("It's not currently possible to send a message using private encrypted channels.")
             channelName.startsWith("private-") -> pusher!!.getPrivateChannel(channelName)
@@ -170,49 +191,69 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
             else -> throw Exception("Messages can only be sent to private and presence channels.")
         }
         result.success(null)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     private fun getSocketId(result: Result) {
+        try {
         val socketId = pusher!!.connection.socketId
         result.success(socketId)
+        }
+        catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
     }
 
     override fun authorize(channelName: String?, socketId: String?): String? {
-        var result: String? = null
-        val mutex = Semaphore(0)
-        activity!!.runOnUiThread {
-            methodChannel.invokeMethod("onAuthorizer", mapOf(
-                "channelName" to channelName,
-                "socketId" to socketId
-            ), object : Result {
-                override fun success(o: Any?) {
-                    if (o != null) {
-                        val gson = Gson()
-                        result = gson.toJson(o)
+        try {
+            var result: String? = null
+            val mutex = Semaphore(0)
+            activity!!.runOnUiThread {
+                methodChannel.invokeMethod("onAuthorizer", mapOf(
+                    "channelName" to channelName,
+                    "socketId" to socketId
+                ), object : Result {
+                    override fun success(o: Any?) {
+                        if (o != null) {
+                            val gson = Gson()
+                            result = gson.toJson(o)
+                        }
+                        mutex.release()
                     }
-                    mutex.release()
-                }
 
-                override fun error(s: String, s1: String?, o: Any?) {
-                    mutex.release()
-                }
+                    override fun error(s: String, s1: String?, o: Any?) {
+                        mutex.release()
+                    }
 
-                override fun notImplemented() {
-                    mutex.release()
-                }
-            })
+                    override fun notImplemented() {
+                        mutex.release()
+                    }
+                })
+            }
+            mutex.acquire()
+            return result
         }
-        mutex.acquire()
-        return result
+            catch (e: Exception) {
+                result.error(TAG, e.message, null)
+            }
     }
 
     // Event handlers
     override fun onConnectionStateChange(change: ConnectionStateChange) {
+        try {
+
         callback(
             "onConnectionStateChange", mapOf(
                 "previousState" to change.previousState.toString(),
                 "currentState" to change.currentState.toString()
             )
+            return result
+                    catch (e: Exception) {
+            result.error(TAG, e.message, null)
+        }
         )
     }
 
@@ -252,29 +293,34 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
     } // Other ChannelEventListener methods
 
     override fun onUsersInformationReceived(channelName: String?, users: MutableSet<User>?) {
-        // Log.i(TAG, "Users received: $users")
-        val gson = Gson()
-        val channel = pusher!!.getPresenceChannel(channelName)
-        val hash = mutableMapOf<String, Any?>()
-        // convert users back to original structure.
-        for (user in users!!) {
-            hash[user.id] = gson.fromJson(user.info, Map::class.java)
+        try {
+
+            // Log.i(TAG, "Users received: $users")
+            val gson = Gson()
+            val channel = pusher!!.getPresenceChannel(channelName)
+            val hash = mutableMapOf<String, Any?>()
+            // convert users back to original structure.
+            for (user in users!!) {
+                hash[user.id] = gson.fromJson(user.info, Map::class.java)
+            }
+            val data = mapOf(
+                "presence" to mapOf(
+                    "count" to users.size,
+                    "ids" to users.map { it.id },
+                    "hash" to hash
+                )
+            )
+            callback(
+                "onEvent", mapOf(
+                    "channelName" to channelName,
+                    "eventName" to "pusher:subscription_succeeded",
+                    "userId" to channel.me.id,
+                    "data" to data
+                )
+            )
+        } catch (e: Exception) {
+            result.error(TAG, e.message, null)
         }
-        val data = mapOf(
-            "presence" to mapOf(
-                "count" to users.size,
-                "ids" to users.map { it.id },
-                "hash" to hash
-            )
-        )
-        callback(
-            "onEvent", mapOf(
-                "channelName" to channelName,
-                "eventName" to "pusher:subscription_succeeded",
-                "userId" to channel.me.id,
-                "data" to data
-            )
-        )
     }
 
     override fun onDecryptionFailure(event: String?, reason: String?) {
