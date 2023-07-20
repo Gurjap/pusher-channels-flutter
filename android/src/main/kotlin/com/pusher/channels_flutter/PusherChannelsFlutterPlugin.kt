@@ -69,16 +69,19 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
                 call.argument("channelName")!!,
                 result
             )
+
             "unsubscribe" -> this.unsubscribe(
                 call.argument("channelName")!!,
                 result
             )
+
             "trigger" -> this.trigger(
                 call.argument("channelName")!!,
                 call.argument("eventName")!!,
                 call.argument("data")!!,
                 result
             )
+
             "getSocketId" -> this.getSocketId(result)
             else -> {
                 result.notImplemented()
@@ -134,75 +137,73 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
         try {
             pusher!!.connect(this, ConnectionState.ALL)
             result.success(null)
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
 
     private fun disconnect(result: Result) {
         try {
-        pusher!!.disconnect()
-        result.success(null)
-        }
-        catch (e: Exception) {
+            pusher!!.disconnect()
+            result.success(null)
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
 
     private fun subscribe(channelName: String, result: Result) {
         try {
-        val channel = when {
-            channelName.startsWith("private-encrypted-") -> pusher!!.subscribePrivateEncrypted(
-                channelName, this
-            )
-            channelName.startsWith("private-") -> pusher!!.subscribePrivate(channelName, this)
-            channelName.startsWith("presence-") -> pusher!!.subscribePresence(
-                channelName, this
-            )
-            else -> pusher!!.subscribe(channelName, this)
-        }
-        channel.bindGlobal(this)
-        result.success(null)
-        }
-        catch (e: Exception) {
+            val channel = when {
+                channelName.startsWith("private-encrypted-") -> pusher!!.subscribePrivateEncrypted(
+                    channelName, this
+                )
+
+                channelName.startsWith("private-") -> pusher!!.subscribePrivate(channelName, this)
+                channelName.startsWith("presence-") -> pusher!!.subscribePresence(
+                    channelName, this
+                )
+
+                else -> pusher!!.subscribe(channelName, this)
+            }
+            channel.bindGlobal(this)
+            result.success(null)
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
 
     private fun unsubscribe(channelName: String, result: Result) {
         try {
-        pusher!!.unsubscribe(channelName)
-        result.success(null)
-        }
-        catch (e: Exception) {
+            pusher!!.unsubscribe(channelName)
+            result.success(null)
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
 
     private fun trigger(channelName: String, eventName: String, data: String, result: Result) {
         try {
-        when {
-            channelName.startsWith("private-encrypted-") -> throw Exception("It's not currently possible to send a message using private encrypted channels.")
-            channelName.startsWith("private-") -> pusher!!.getPrivateChannel(channelName)
-                .trigger(eventName, data)
-            channelName.startsWith("presence-") -> pusher!!.getPresenceChannel(channelName)
-                .trigger(eventName, data)
-            else -> throw Exception("Messages can only be sent to private and presence channels.")
-        }
-        result.success(null)
-        }
-        catch (e: Exception) {
+            when {
+                channelName.startsWith("private-encrypted-") -> throw Exception("It's not currently possible to send a message using private encrypted channels.")
+                channelName.startsWith("private-") -> pusher!!.getPrivateChannel(channelName)
+                    .trigger(eventName, data)
+
+                channelName.startsWith("presence-") -> pusher!!.getPresenceChannel(channelName)
+                    .trigger(eventName, data)
+
+                else -> throw Exception("Messages can only be sent to private and presence channels.")
+            }
+            result.success(null)
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
 
     private fun getSocketId(result: Result) {
         try {
-        val socketId = pusher!!.connection.socketId
-        result.success(socketId)
-        }
-        catch (e: Exception) {
+            val socketId = pusher!!.connection.socketId
+            result.success(socketId)
+        } catch (e: Exception) {
             result.error(TAG, e.message, null)
         }
     }
@@ -235,26 +236,27 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
             }
             mutex.acquire()
             return result
+        } catch (e: Exception) {
+            result.error(TAG, e.message, null)
         }
-            catch (e: Exception) {
-                result.error(TAG, e.message, null)
-            }
     }
 
     // Event handlers
     override fun onConnectionStateChange(change: ConnectionStateChange) {
         try {
 
-        callback(
-            "onConnectionStateChange", mapOf(
-                "previousState" to change.previousState.toString(),
-                "currentState" to change.currentState.toString()
+            callback(
+                "onConnectionStateChange", mapOf(
+                    "previousState" to change.previousState.toString(),
+                    "currentState" to change.currentState.toString()
+                )
+                return result
+                        catch (e: Exception
+            ) {
+                result.error(TAG, e.message, null)
+            }
             )
-            return result
-                    catch (e: Exception) {
-            result.error(TAG, e.message, null)
         }
-        )
     }
 
     override fun onSubscriptionSucceeded(channelName: String) {
@@ -264,7 +266,7 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
                 "onEvent", mapOf(
                     "channelName" to channelName,
                     "eventName" to "pusher:subscription_succeeded",
-                    "data" to emptyMap<String,String>()
+                    "data" to emptyMap<String, String>()
                 )
             )
         }
@@ -372,5 +374,6 @@ class PusherChannelsFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
     override fun onError(message: String, e: Exception) {
         onError(message, "", e)
     }
+
 }
 
